@@ -19,7 +19,7 @@ sample_r <- c()
 
 #We will stick to 30 people per sample
 for (i in 1:100000) {
-  sample1 <- sample(pop,30)
+  sample1 <- sample(pop1,30)
   sample2 <- sample(pop2,30)
   #Add the correlation coefficient, which we "expect" to be zero
   sample_r[i] <- cor(sample1,sample2)
@@ -47,4 +47,5 @@ print(paste0("pvalue is ",P_value))
 
 #As we see, the sampling distribution generates
 #The same p-value as the t-test (more or less)
+
 
