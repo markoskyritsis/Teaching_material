@@ -244,6 +244,60 @@ mean(ceosal1$lsalary) - sd(ceosal1$lsalary)
 #represents a very small positive salary 
 #when exponentiated back.
 
+#Finally, a small spread gives us confidence in the mean
+#Let's check two theoretical firms:
+
+library(tidyverse)
+
+# 1. We Create a theoretical dataset for two types of firms
+# Both have an average salary of $100k
+df_viz <- data.frame(
+  x = seq(40000, 160000, length.out = 1000)
+) %>%
+  mutate(
+    # Narrow Distribution (Stable Industry - SD = $5k)
+    Stable = dnorm(x, mean = 100000, sd = 5000),
+    # Wide Distribution (Volatile Industry - SD = $20k)
+    Volatile = dnorm(x, mean = 100000, sd = 20000)
+  ) %>%
+  pivot_longer(cols = c(Stable, Volatile), names_to = "Industry", values_to = "Density")
+
+# 2. Visualize the comparison
+ggplot(df_viz, aes(x = x, y = Density, fill = Industry)) +
+  geom_area(alpha = 0.4, position = "identity") +
+  geom_line(aes(color = Industry), size = 1) +
+  geom_vline(xintercept = 100000, linetype = "dashed", color = "black") +
+  scale_x_continuous(labels = scales::dollar_format()) +
+  scale_fill_manual(values = c("#2ecc71", "#e74c3c")) +
+  scale_color_manual(values = c("#27ae60", "#c0392b")) +
+  labs(
+    title = "Confidence in the Mean: Stable vs. Volatile",
+    subtitle = "Both industries have the same $100k average, but very different 'Reliability'",
+    x = "Salary",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  annotate("text", x = 100000, y = 0.00007, label = "The Mean ($100k)", angle = 90, vjust = -0.5)
+
+
+
+#The "Green World" (Stable): "If you take a job in this 
+#industry, the mean is a great predictor. 
+#You are almost guaranteed to earn close to $100k. 
+#We have high confidence that a random sample will be near 
+#the truth."
+
+#The "Red World" (Volatile): "Here, the mean is exactly 
+#the same, but it's almost 'meaningless' for an individual. 
+#You might earn $60k or $140k. A small sample here is very 
+#likely to 'lie' to you about what the true population average is."
+
+#In Finance, they call the width of the red curve 'Risk'. 
+#If you are an accountant auditing these two firms, 
+#you need a much larger sample size for the Red firm to 
+#achieve the same level of certainty as the Green firm."
+
+
 
 ####################The trap of summary statistics
 
