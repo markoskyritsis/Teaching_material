@@ -1,0 +1,60 @@
+library(shiny)
+library(tidyverse)
+
+ui <- fluidPage(
+  titlePanel("The Gosset Simulator: When Samples Lie"),
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("n", "Sample Size (n):", min = 2, max = 100, value = 60),
+      sliderInput("sd_val", "Population SD:", min = 5, max = 50, value = 25),
+      sliderInput("mean_diff", "True Difference:", min = 0, max = 30, value = 10),
+      actionButton("resample", "Take New Samples")
+    ),
+    mainPanel(
+      # UI ID MUST MATCH SERVER ID EXACTLY
+      plotOutput("distPlot"), 
+      verbatimTextOutput("statsOut")
+    )
+  )
+)
+
+server <- function(input, output) {
+  
+  data_obs <- eventReactive(list(input$resample, input$n, input$sd_val, input$mean_diff), {
+    s1 <- rnorm(input$n, 100, input$sd_val)
+    s2 <- rnorm(input$n, 100 + input$mean_diff, input$sd_val)
+    obs_diff <- mean(s1) - mean(s2)
+    pooled_sd <- sqrt(0.5 * (var(s1) + var(s2)))
+    se <- pooled_sd * sqrt(1/input$n + 1/input$n)
+    
+    null_diffs <- replicate(5000, {
+      mean(rnorm(input$n, 0, pooled_sd)) - mean(rnorm(input$n, 0, pooled_sd))
+    })
+    
+    list(obs_diff=obs_diff, null_diffs=null_diffs, se=se, s1=s1, s2=s2)
+  })
+  
+  # FIXED: Use output$distPlot, not output.distPlot
+  output$distPlot <- renderPlot({
+    d <- data_obs()
+    
+    # Using explicit data.frame to avoid any scoping issues
+    plot_data <- data.frame(x = d$null_diffs)
+    
+    ggplot(plot_data, aes(x = x)) +
+      geom_density(fill = "grey", alpha = 0.4) +
+      geom_vline(xintercept = d$obs_diff, color = "red", size = 1.5) +
+      geom_vline(xintercept = c(-1.96 * d$se, 1.96 * d$se), linetype = "dotted") +
+      labs(title = "Sampling Distribution (The 'Null World')",
+           subtitle = "Red line = Your Observed Sample Difference",
+           x = "Difference in Means", y = "Density") +
+      theme_minimal()
+  })
+  
+  output$statsOut <- renderPrint({
+    d <- data_obs()
+    t.test(d$s1, d$s2, var.equal = TRUE)
+  })
+}
+
+shinyApp(ui = ui, server = server)
