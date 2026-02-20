@@ -1,0 +1,43 @@
+library(tidyverse)
+
+set.seed(2026)
+
+# We will generate 500 days of data
+cafe_data <- data.frame(
+  Date = seq(as.Date("2024-01-01"), by = "day", length.out = 500),
+  Promotion_Spend = runif(500, 50, 500),  # IV: £ spent on local ads
+  Staff_on_Shift = sample(2:8, 500, replace = TRUE) # Another potential IV
+) %>%
+  mutate(
+    # DV: Revenue = Base (£500) + (2.5 * Promo) + some random noise
+    Revenue = 500 + (2.5 * Promotion_Spend) + rnorm(500, mean = 0, sd = 100),
+    # Add a categorical variable for "Region"
+    Region = sample(c("North", "South"), 500, replace = TRUE)
+  )
+
+# Preview the data
+head(cafe_data)
+
+#Difference in means, example. For this week.
+
+library(tidyverse)
+
+# Let's visualize the difference in means between Regions
+
+ggplot(cafe_data, aes(x = Region, y = Revenue, fill = Region)) +
+  # Draw the bars representing the Mean
+  stat_summary(fun = mean, geom = "bar", alpha = 0.7, width = 0.6) +
+  # Draw the 95% Confidence Interval Error Bars
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.2, size = 1) +
+  scale_y_continuous(labels = scales::label_dollar(prefix = "£")) +
+  scale_fill_manual(values = c("North" = "#3498db", "South" = "#e67e22")) +
+  labs(
+    title = "Average Daily Revenue by Region",
+    subtitle = "Error bars represent 95% Confidence Intervals",
+    x = "Region (Independent Variable)",
+    y = "Mean Revenue (Dependent Variable)"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+t.test(cafe_data$Revenue ~ cafe_data$Region)
